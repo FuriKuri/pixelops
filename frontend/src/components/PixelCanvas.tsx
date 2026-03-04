@@ -103,12 +103,21 @@ export function PixelCanvas() {
   useEngineSync(engineCharsRef, tileMapRef, edgeEffectRef)
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={800}
-      height={600}
-      className="border border-gray-700 rounded w-full h-full"
-      style={{ imageRendering: 'pixelated' }}
-    />
+    <div className="relative w-full h-full flex items-center justify-center">
+      <canvas
+        ref={canvasRef}
+        width={800}
+        height={600}
+        className="border border-gray-200 dark:border-gray-700 rounded w-full h-full transition-colors"
+        style={{ imageRendering: 'pixelated' }}
+      />
+      {!selectedGraph && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <p className="text-gray-400 dark:text-gray-500 text-sm font-medium">
+            Select a graph to begin
+          </p>
+        </div>
+      )}
+    </div>
   )
 }

@@ -32,13 +32,13 @@ export function NodeStatusBar() {
   const nodes = selectedGraph?.nodes ?? []
 
   return (
-    <aside className="w-80 border-l border-gray-700 flex flex-col">
-      <div className="px-4 py-3 border-b border-gray-700">
-        <h2 className="text-sm font-semibold text-gray-200">Node Status</h2>
+    <aside className="w-80 border-l border-gray-200 dark:border-gray-700 flex flex-col bg-white dark:bg-gray-900 transition-colors">
+      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Node Status</h2>
       </div>
       <div className="flex-1 overflow-y-auto">
         {nodes.length === 0 ? (
-          <p className="px-4 py-3 text-xs text-gray-500">No graph loaded</p>
+          <p className="px-4 py-3 text-xs text-gray-400 dark:text-gray-500">No graph loaded</p>
         ) : (
           nodes.map((node) => {
             const char = characters.get(node.id)
@@ -48,8 +48,10 @@ export function NodeStatusBar() {
             return (
               <div
                 key={node.id}
-                className={`px-4 py-2 border-b border-gray-800 transition-colors ${
-                  isActive ? 'bg-gray-800' : 'hover:bg-gray-850'
+                className={`px-4 py-2 border-b border-gray-100 dark:border-gray-800 transition-colors ${
+                  isActive
+                    ? 'bg-gray-100 dark:bg-gray-800'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-850'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -58,14 +60,16 @@ export function NodeStatusBar() {
                   </span>
                   <span
                     className={`text-sm font-medium truncate ${
-                      isActive ? 'text-yellow-300' : 'text-gray-200'
+                      isActive
+                        ? 'text-yellow-600 dark:text-yellow-300'
+                        : 'text-gray-700 dark:text-gray-200'
                     }`}
                   >
                     {node.label}
                   </span>
                 </div>
                 {lastMsg && (
-                  <p className="mt-1 ml-5 text-xs text-gray-400 truncate">{lastMsg}</p>
+                  <p className="mt-1 ml-5 text-xs text-gray-400 dark:text-gray-400 truncate">{lastMsg}</p>
                 )}
               </div>
             )

@@ -33,7 +33,6 @@ export function ControlPanel() {
     setHitlLoading(true)
     setInterrupted(false)
 
-    // POST input and consume the resumed SSE stream
     fetchEventSource(`${API_BASE}/api/graphs/${selectedGraph.id}/input`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -107,25 +106,37 @@ export function ControlPanel() {
     error: 'text-red-400',
   }
 
+  const statusLabel: Record<string, string> = {
+    idle: 'IDLE',
+    connecting: 'Connecting...',
+    running: 'RUNNING',
+    waiting: 'WAITING',
+    error: 'ERROR',
+  }
+
   return (
-    <div className="border-t border-gray-700 px-4 py-3 flex flex-col gap-2">
-      <div className="flex items-center gap-3">
-        <span className={`text-sm font-medium ${statusColors[status] ?? 'text-gray-400'}`}>
-          ● {status.toUpperCase()}
+    <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-2 md:py-3 flex flex-col gap-2 bg-white dark:bg-gray-900 transition-colors">
+      <div className="flex items-center gap-2 md:gap-3">
+        <span className={`text-xs md:text-sm font-medium ${statusColors[status] ?? 'text-gray-400'}`}>
+          {status === 'connecting' ? (
+            <span className="animate-pulse">● {statusLabel[status]}</span>
+          ) : (
+            <span>● {statusLabel[status] ?? status.toUpperCase()}</span>
+          )}
         </span>
-        {error && <span className="text-xs text-red-400">{error}</span>}
-        <div className="flex gap-2 ml-auto">
+        {error && <span className="text-xs text-red-400 truncate max-w-xs">{error}</span>}
+        <div className="flex gap-1.5 md:gap-2 ml-auto">
           <button
             onClick={start}
             disabled={!selectedGraph || isConnected}
-            className="px-3 py-1 text-sm bg-green-700 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed rounded text-white transition-colors"
+            className="px-2 md:px-3 py-1 text-xs md:text-sm bg-green-700 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed rounded text-white transition-colors"
           >
             Start
           </button>
           <button
             onClick={handleStop}
             disabled={!isRunning && !isConnected}
-            className="px-3 py-1 text-sm bg-red-700 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed rounded text-white transition-colors"
+            className="px-2 md:px-3 py-1 text-xs md:text-sm bg-red-700 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed rounded text-white transition-colors"
           >
             Stop
           </button>
@@ -134,14 +145,14 @@ export function ControlPanel() {
 
       {isInterrupted && (
         <div className="flex gap-2 mt-1 items-center">
-          <span className="text-orange-400 text-sm">❓</span>
+          <span className="text-orange-400 text-sm">?</span>
           <input
             type="text"
             value={hitlInput}
             onChange={(e) => setHitlInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !hitlLoading && handleHitlSubmit()}
             placeholder="Human input required..."
-            className="flex-1 bg-gray-800 border border-orange-500 rounded px-2 py-1 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-400"
+            className="flex-1 bg-gray-100 dark:bg-gray-800 border border-orange-500 rounded px-2 py-1 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-orange-400 transition-colors"
             autoFocus
             disabled={hitlLoading}
           />
