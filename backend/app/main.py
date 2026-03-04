@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
+from app.graph import registry  # noqa: F401 – singleton, imported for side effects
 
 app = FastAPI(title="PixelOps", description="Pixel-Art visualization for LangGraph agents")
 
