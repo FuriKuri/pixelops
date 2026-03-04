@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { useGraphStore } from '../store/graphStore'
-import type { NodeEvent } from '../types/api'
+import type { NodeStartEvent, NodeEndEvent, InterruptEvent } from '../types/api'
 
 const API_BASE = 'http://localhost:8000'
 const MAX_BACKOFF = 30000
@@ -10,8 +10,7 @@ export function useGraphStream(graphId: string | null) {
   const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const ctrlRef = useRef<AbortController | null>(null)
-  const backoffRef = useRef(1000)
-  const { addNodeEvent, setCharacterState, startRun } = useGraphStore()
+  const { addNodeEvent, setCharacterState, startRun, stopRun, setInterrupted } = useGraphStore()
 
   const stop = useCallback(() => {
     ctrlRef.current?.abort()
@@ -32,7 +31,6 @@ export function useGraphStream(graphId: string | null) {
           if (res.ok) {
             setIsConnected(true)
             setError(null)
-            backoffRef.current = 1000
           } else {
             throw new Error(`HTTP ${res.status}`)
           }
@@ -40,9 +38,39 @@ export function useGraphStream(graphId: string | null) {
         onmessage: (msg) => {
           if (!msg.data) return
           try {
-            const event: NodeEvent = JSON.parse(msg.data)
-            addNodeEvent(event)
-            setCharacterState(event.node_id, event.status)
+            const payload = JSON.parse(msg.data)
+            switch (msg.event) {
+              case 'node_start': {
+                const e = payload as NodeStartEvent
+                setCharacterState(e.node_id, 'running')
+                addNodeEvent({ node_id: e.node_id, status: 'running', timestamp: e.timestamp })
+                break
+              }
+              case 'node_end': {
+                const e = payload as NodeEndEvent
+                setCharacterState(e.node_id, 'completed')
+                addNodeEvent({
+                  node_id: e.node_id,
+                  status: 'completed',
+                  timestamp: e.timestamp,
+                  data: e.data.output,
+                })
+                break
+              }
+              case 'interrupt': {
+                const e = payload as InterruptEvent
+                setInterrupted(true)
+                addNodeEvent({ node_id: '__interrupt__', status: 'pending', timestamp: e.timestamp })
+                break
+              }
+              case 'done': {
+                stopRun()
+                setIsConnected(false)
+                ctrlRef.current?.abort()
+                break
+              }
+              // node_progress: ignore for now (streaming tokens not visualized yet)
+            }
           } catch {
             // ignore parse errors
           }
@@ -50,19 +78,19 @@ export function useGraphStream(graphId: string | null) {
         onerror: (err) => {
           setIsConnected(false)
           if (ctrl.signal.aborted) return
-          const delay = Math.min(backoffRef.current * Math.pow(2, attempt), MAX_BACKOFF)
+          const delay = Math.min(1000 * Math.pow(2, attempt), MAX_BACKOFF)
           setError(`Connection error, retrying in ${delay / 1000}s...`)
           setTimeout(() => {
             if (!ctrl.signal.aborted) connect(id, attempt + 1)
           }, delay)
-          throw err // prevent auto-retry by fetchEventSource itself
+          throw err
         },
         onclose: () => {
           setIsConnected(false)
         },
       })
     },
-    [addNodeEvent, setCharacterState]
+    [addNodeEvent, setCharacterState, setInterrupted, stopRun]
   )
 
   const start = useCallback(() => {

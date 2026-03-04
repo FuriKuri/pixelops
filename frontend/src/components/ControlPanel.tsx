@@ -2,19 +2,19 @@ import { useState } from 'react'
 import { useGraphStore } from '../store/graphStore'
 import { useGraphStream } from '../hooks/useGraphStream'
 
+const API_BASE = 'http://localhost:8000'
+
 export function ControlPanel() {
   const selectedGraph = useGraphStore((s) => s.selectedGraph)
   const isRunning = useGraphStore((s) => s.isRunning)
-  const nodeEvents = useGraphStore((s) => s.nodeEvents)
+  const isInterrupted = useGraphStore((s) => s.isInterrupted)
+  const setInterrupted = useGraphStore((s) => s.setInterrupted)
   const reset = useGraphStore((s) => s.reset)
 
-  const { isConnected, error, start, stop } = useGraphStream(selectedGraph?.graph_id ?? null)
+  const { isConnected, error, start, stop } = useGraphStream(selectedGraph?.id ?? null)
 
   const [hitlInput, setHitlInput] = useState('')
   const [hitlLoading, setHitlLoading] = useState(false)
-
-  const lastEvent = nodeEvents[nodeEvents.length - 1]
-  const needsHitl = lastEvent?.status === 'error' && lastEvent?.data?.requires_input === true
 
   const handleStop = () => {
     stop()
@@ -25,12 +25,13 @@ export function ControlPanel() {
     if (!selectedGraph || !hitlInput.trim()) return
     setHitlLoading(true)
     try {
-      await fetch(`http://localhost:8000/api/graphs/${selectedGraph.graph_id}/input`, {
+      await fetch(`${API_BASE}/api/graphs/${selectedGraph.id}/input`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input: hitlInput }),
       })
       setHitlInput('')
+      setInterrupted(false)
     } finally {
       setHitlLoading(false)
     }
@@ -38,6 +39,8 @@ export function ControlPanel() {
 
   const status = !selectedGraph
     ? 'idle'
+    : isInterrupted
+    ? 'waiting'
     : isConnected
     ? 'running'
     : isRunning
@@ -48,7 +51,7 @@ export function ControlPanel() {
     idle: 'text-gray-400',
     connecting: 'text-yellow-400',
     running: 'text-green-400',
-    completed: 'text-blue-400',
+    waiting: 'text-orange-400',
     error: 'text-red-400',
   }
 
@@ -77,7 +80,7 @@ export function ControlPanel() {
         </div>
       </div>
 
-      {needsHitl && (
+      {isInterrupted && (
         <div className="flex gap-2 mt-1">
           <input
             type="text"
@@ -85,12 +88,13 @@ export function ControlPanel() {
             onChange={(e) => setHitlInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleHitlSubmit()}
             placeholder="Human input required..."
-            className="flex-1 bg-gray-800 border border-yellow-500 rounded px-2 py-1 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400"
+            className="flex-1 bg-gray-800 border border-orange-500 rounded px-2 py-1 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-400"
+            autoFocus
           />
           <button
             onClick={handleHitlSubmit}
             disabled={hitlLoading || !hitlInput.trim()}
-            className="px-3 py-1 text-sm bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 rounded text-white transition-colors"
+            className="px-3 py-1 text-sm bg-orange-600 hover:bg-orange-500 disabled:opacity-40 rounded text-white transition-colors"
           >
             Submit
           </button>
