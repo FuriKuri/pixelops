@@ -42,8 +42,8 @@ export class TileMap {
   }
 
   loadFromLayout(layout: LayoutData): void {
-    this._width = layout.grid_width
-    this._height = layout.grid_height
+    this._width = layout.width
+    this._height = layout.height
 
     // Initialize all as floor
     this.tiles = []
@@ -65,7 +65,7 @@ export class TileMap {
     }
 
     // Place desks at node positions
-    for (const pos of Object.values(layout.positions) as Position[]) {
+    for (const pos of Object.values(layout.node_positions) as Position[]) {
       const dx = Math.floor(pos.x)
       const dy = Math.floor(pos.y)
       if (dx >= 0 && dx < this._width && dy >= 0 && dy < this._height) {
