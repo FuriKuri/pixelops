@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from langgraph.graph.state import CompiledStateGraph as CompiledGraph
 
 from app.models.schemas import EdgeInfo, GraphInfo, NodeInfo

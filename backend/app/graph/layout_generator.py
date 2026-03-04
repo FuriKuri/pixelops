@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import defaultdict, deque
 
 from app.models.schemas import EdgeInfo, GraphInfo, LayoutData, NodeInfo, Position
