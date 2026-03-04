@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException
 
 from app.graph import registry
-from app.models.schemas import GraphInfo, LayoutData
+from app.graph.layout_generator import generate_layout
+from app.models.schemas import GraphInfo
 
 router = APIRouter(prefix="/api")
 
@@ -17,8 +18,7 @@ async def get_graph_structure(graph_id: str) -> dict:
         graph = registry.get_structure(graph_id)
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Graph '{graph_id}' not found")
-    # Placeholder layout until layout generator is implemented
-    layout = LayoutData(width=20, height=15)
+    layout = generate_layout(graph)
     return {"graph": graph, "layout": layout}
 
 
