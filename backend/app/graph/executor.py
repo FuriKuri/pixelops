@@ -75,11 +75,57 @@ async def format_sse_events(
                 "event": node_event.type,
                 "data": node_event.model_dump_json(),
             }
-        # Signal completion
+        # Check for interrupt (HITL) after stream completes
+        state = await compiled_graph.aget_state(config or {})
+        if state and state.next:
+            yield {
+                "event": "interrupt",
+                "data": json.dumps({
+                    "waiting_for": list(state.next),
+                    "timestamp": time.time(),
+                }),
+            }
+        else:
+            yield {
+                "event": "done",
+                "data": json.dumps({"timestamp": time.time()}),
+            }
+    except Exception as e:
         yield {
-            "event": "done",
-            "data": json.dumps({"timestamp": time.time()}),
+            "event": "error",
+            "data": json.dumps({"error": str(e), "timestamp": time.time()}),
         }
+
+
+async def resume_graph(
+    compiled_graph: Any,
+    user_input: Any,
+    config: dict | None = None,
+) -> AsyncGenerator[dict, None]:
+    """Resume an interrupted graph with user input via Command(resume=...)."""
+    from langgraph.types import Command
+
+    command = Command(resume=user_input)
+    try:
+        async for node_event in execute_graph(compiled_graph, command, config):
+            yield {
+                "event": node_event.type,
+                "data": node_event.model_dump_json(),
+            }
+        state = await compiled_graph.aget_state(config or {})
+        if state and state.next:
+            yield {
+                "event": "interrupt",
+                "data": json.dumps({
+                    "waiting_for": list(state.next),
+                    "timestamp": time.time(),
+                }),
+            }
+        else:
+            yield {
+                "event": "done",
+                "data": json.dumps({"timestamp": time.time()}),
+            }
     except Exception as e:
         yield {
             "event": "error",
