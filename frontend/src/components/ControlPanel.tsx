@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { useGraphStore } from '../store/graphStore'
 import { useGraphStream } from '../hooks/useGraphStream'
+import type { NodeStartEvent, NodeEndEvent } from '../types/api'
 
 const API_BASE = 'http://localhost:8000'
 
@@ -9,6 +11,9 @@ export function ControlPanel() {
   const isRunning = useGraphStore((s) => s.isRunning)
   const isInterrupted = useGraphStore((s) => s.isInterrupted)
   const setInterrupted = useGraphStore((s) => s.setInterrupted)
+  const addNodeEvent = useGraphStore((s) => s.addNodeEvent)
+  const setCharacterState = useGraphStore((s) => s.setCharacterState)
+  const stopRun = useGraphStore((s) => s.stopRun)
   const reset = useGraphStore((s) => s.reset)
 
   const { isConnected, error, start, stop } = useGraphStream(selectedGraph?.id ?? null)
@@ -23,18 +28,65 @@ export function ControlPanel() {
 
   const handleHitlSubmit = async () => {
     if (!selectedGraph || !hitlInput.trim()) return
+    const inputValue = hitlInput
+    setHitlInput('')
     setHitlLoading(true)
-    try {
-      await fetch(`${API_BASE}/api/graphs/${selectedGraph.id}/input`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: hitlInput }),
-      })
-      setHitlInput('')
-      setInterrupted(false)
-    } finally {
-      setHitlLoading(false)
-    }
+    setInterrupted(false)
+
+    // POST input and consume the resumed SSE stream
+    fetchEventSource(`${API_BASE}/api/graphs/${selectedGraph.id}/input`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input: inputValue }),
+      onopen: async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      },
+      onmessage: (msg) => {
+        if (!msg.data) return
+        try {
+          const payload = JSON.parse(msg.data)
+          switch (msg.event) {
+            case 'node_start': {
+              const e = payload as NodeStartEvent
+              setCharacterState(e.node_id, 'running')
+              addNodeEvent({ node_id: e.node_id, status: 'running', timestamp: e.timestamp })
+              break
+            }
+            case 'node_end': {
+              const e = payload as NodeEndEvent
+              setCharacterState(e.node_id, 'completed')
+              addNodeEvent({
+                node_id: e.node_id,
+                status: 'completed',
+                timestamp: e.timestamp,
+                data: e.data.output,
+              })
+              break
+            }
+            case 'interrupt': {
+              setInterrupted(true)
+              addNodeEvent({ node_id: '__interrupt__', status: 'pending', timestamp: payload.timestamp })
+              setHitlLoading(false)
+              break
+            }
+            case 'done': {
+              stopRun()
+              setHitlLoading(false)
+              break
+            }
+          }
+        } catch {
+          // ignore parse errors
+        }
+      },
+      onerror: () => {
+        setHitlLoading(false)
+        throw new Error('stream error') // stop retrying
+      },
+      onclose: () => {
+        setHitlLoading(false)
+      },
+    })
   }
 
   const status = !selectedGraph
@@ -81,22 +133,24 @@ export function ControlPanel() {
       </div>
 
       {isInterrupted && (
-        <div className="flex gap-2 mt-1">
+        <div className="flex gap-2 mt-1 items-center">
+          <span className="text-orange-400 text-sm">❓</span>
           <input
             type="text"
             value={hitlInput}
             onChange={(e) => setHitlInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleHitlSubmit()}
+            onKeyDown={(e) => e.key === 'Enter' && !hitlLoading && handleHitlSubmit()}
             placeholder="Human input required..."
             className="flex-1 bg-gray-800 border border-orange-500 rounded px-2 py-1 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-400"
             autoFocus
+            disabled={hitlLoading}
           />
           <button
             onClick={handleHitlSubmit}
             disabled={hitlLoading || !hitlInput.trim()}
             className="px-3 py-1 text-sm bg-orange-600 hover:bg-orange-500 disabled:opacity-40 rounded text-white transition-colors"
           >
-            Submit
+            {hitlLoading ? '...' : 'Submit'}
           </button>
         </div>
       )}
