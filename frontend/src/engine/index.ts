@@ -30,3 +30,9 @@ export { findPath } from './Pathfinding.ts'
 
 // Speech Bubbles
 export { SpeechBubble, type BubbleType, type SpeechBubbleConfig } from './SpeechBubble.ts'
+
+// Particle System
+export { ParticleSystem, type Particle, type ParticlePreset } from './ParticleSystem.ts'
+
+// Edge Effects
+export { EdgeEffect } from './EdgeEffect.ts'
