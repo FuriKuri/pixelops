@@ -39,3 +39,10 @@ export interface NodeEvent {
   timestamp: string
   data?: Record<string, unknown>
 }
+
+export interface CharacterState {
+  id: string
+  name: string
+  state: 'pending' | 'running' | 'completed' | 'error' | 'idle'
+  position: Position
+}
