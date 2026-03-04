@@ -1,10 +1,18 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
+from sse_starlette.sse import EventSourceResponse
 
 from app.graph import registry
+from app.graph.executor import format_sse_events
 from app.graph.layout_generator import generate_layout
 from app.models.schemas import GraphInfo
 
 router = APIRouter(prefix="/api")
+
+
+class RunInput(BaseModel):
+    input: dict = {}
+    config: dict = {}
 
 
 @router.get("/graphs")
@@ -23,8 +31,13 @@ async def get_graph_structure(graph_id: str) -> dict:
 
 
 @router.post("/graphs/{graph_id}/run")
-async def run_graph(graph_id: str):
-    # TODO: SSE stream with LangGraph execution
-    if graph_id not in [g.id for g in registry.list()]:
+async def run_graph(graph_id: str, body: RunInput, request: Request):
+    """Execute a graph and stream events via SSE."""
+    try:
+        compiled = registry.get_compiled(graph_id)
+    except KeyError:
         raise HTTPException(status_code=404, detail=f"Graph '{graph_id}' not found")
-    return {"status": "not_implemented", "message": "SSE streaming coming soon"}
+
+    return EventSourceResponse(
+        format_sse_events(compiled, body.input, body.config),
+    )
