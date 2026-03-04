@@ -7,7 +7,7 @@ export interface NodeInfo {
   id: string
   label: string
   type: string
-  position: Position
+  position?: Position
 }
 
 export interface EdgeInfo {
@@ -18,7 +18,7 @@ export interface EdgeInfo {
 }
 
 export interface GraphInfo {
-  graph_id: string
+  id: string
   name: string
   description?: string
   nodes: NodeInfo[]
@@ -26,16 +26,60 @@ export interface GraphInfo {
 }
 
 export interface LayoutData {
-  graph_id: string
-  positions: Record<string, Position>
-  grid_width: number
-  grid_height: number
+  width: number
+  height: number
+  node_positions: Record<string, Position>
 }
 
+export interface GraphStructure {
+  graph: GraphInfo
+  layout: LayoutData
+}
+
+// SSE event types (named events from backend)
+export interface NodeStartEvent {
+  type: 'node_start'
+  node_id: string
+  timestamp: number
+  data: { step: number; triggers: string[] }
+}
+
+export interface NodeProgressEvent {
+  type: 'node_progress'
+  node_id: string
+  timestamp: number
+  data: { token: string }
+}
+
+export interface NodeEndEvent {
+  type: 'node_end'
+  node_id: string
+  timestamp: number
+  data: { step: number; output: Record<string, unknown> }
+}
+
+export interface InterruptEvent {
+  waiting_for: string[]
+  timestamp: number
+}
+
+export interface DoneEvent {
+  timestamp: number
+}
+
+export type SSENodeEvent = NodeStartEvent | NodeProgressEvent | NodeEndEvent
+
+// Legacy NodeEvent – kept for store compatibility
 export interface NodeEvent {
-  graph_id: string
   node_id: string
   status: 'pending' | 'running' | 'completed' | 'error'
-  timestamp: string
+  timestamp: number
   data?: Record<string, unknown>
+}
+
+export interface CharacterState {
+  id: string
+  name: string
+  state: 'pending' | 'running' | 'completed' | 'error' | 'idle'
+  position: Position
 }
