@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { useGraphStore } from '../store/graphStore'
 import { useGraphStream } from '../hooks/useGraphStream'
+import { useGraphObserve } from '../hooks/useGraphObserve'
 import type { NodeStartEvent, NodeProgressEvent, NodeEndEvent } from '../types/api'
 import { API_BASE } from '../config'
 
@@ -18,6 +19,7 @@ export function ControlPanel() {
   const clearNodeOutput = useGraphStore((s) => s.clearNodeOutput)
 
   const { isConnected, error, start, stop } = useGraphStream(selectedGraph?.id ?? null)
+  const { isObserving } = useGraphObserve(selectedGraph?.id ?? null)
 
   const [topicInput, setTopicInput] = useState('AI in Healthcare')
   const [hitlInput, setHitlInput] = useState('')
@@ -113,12 +115,15 @@ export function ControlPanel() {
     ? 'running'
     : isRunning
     ? 'connecting'
+    : isObserving
+    ? 'observing'
     : 'idle'
 
   const statusColors: Record<string, string> = {
     idle: 'text-gray-400',
     connecting: 'text-yellow-400',
     running: 'text-green-400',
+    observing: 'text-blue-400',
     waiting: 'text-orange-400',
     error: 'text-red-400',
   }
@@ -127,6 +132,7 @@ export function ControlPanel() {
     idle: 'IDLE',
     connecting: 'Connecting...',
     running: 'RUNNING',
+    observing: 'OBSERVING',
     waiting: 'WAITING',
     error: 'ERROR',
   }
