@@ -3,8 +3,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { useGraphStore } from '../store/graphStore'
 import { useGraphStream } from '../hooks/useGraphStream'
 import type { NodeStartEvent, NodeProgressEvent, NodeEndEvent } from '../types/api'
-
-const API_BASE = ''
+import { API_BASE } from '../config'
 
 export function ControlPanel() {
   const selectedGraph = useGraphStore((s) => s.selectedGraph)
@@ -41,7 +40,7 @@ export function ControlPanel() {
     setHitlLoading(true)
     setInterrupted(false)
 
-    fetchEventSource(`${API_BASE}/api/graphs/${selectedGraph.id}/input`, {
+    fetchEventSource(`${API_BASE}/graphs/${selectedGraph.id}/input`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ input: inputValue }),

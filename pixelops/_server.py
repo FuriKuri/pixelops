@@ -7,7 +7,7 @@ from typing import Any
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from pixelops._registry import registry
@@ -16,8 +16,17 @@ from pixelops._routes import router
 STATIC_DIR = Path(__file__).parent / "static"
 
 
-def create_app() -> FastAPI:
-    app = FastAPI(title="PixelOps")
+def create_app(base_path: str = "") -> FastAPI:
+    """Create the PixelOps FastAPI app.
+
+    Args:
+        base_path: URL prefix when mounted as sub-app (e.g. "/pixelops").
+                   Empty string for standalone mode.
+    """
+    # Strip trailing slash for consistent path joining
+    base_path = base_path.rstrip("/")
+
+    app = FastAPI(title="PixelOps", root_path=base_path)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:*", "http://127.0.0.1:*"],
@@ -29,15 +38,32 @@ def create_app() -> FastAPI:
 
     # Serve frontend static files
     if STATIC_DIR.exists():
-        app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
+        assets_dir = STATIC_DIR / "assets"
+        if assets_dir.exists():
+            app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+        @app.get("/")
+        async def serve_index() -> HTMLResponse:
+            """Serve index.html with injected base path."""
+            html = (STATIC_DIR / "index.html").read_text()
+            # Inject base path as global variable for the JS bundle
+            inject = f'<script>window.__PIXELOPS_BASE__="{base_path}";</script>'
+            html = html.replace("</head>", f"{inject}</head>")
+            # Fix absolute asset paths to include base_path
+            if base_path:
+                html = html.replace('src="/assets/', f'src="{base_path}/assets/')
+                html = html.replace('href="/assets/', f'href="{base_path}/assets/')
+                html = html.replace('href="/vite.svg"', f'href="{base_path}/vite.svg"')
+            return HTMLResponse(html)
 
         @app.get("/{path:path}")
-        async def spa_fallback(path: str):
-            """Serve index.html for all non-API routes (SPA routing)."""
+        async def spa_fallback(path: str) -> FileResponse | HTMLResponse:
+            """Serve static files or fall back to index.html for SPA routing."""
             file = (STATIC_DIR / path).resolve()
             if file.is_file() and str(file).startswith(str(STATIC_DIR.resolve())):
                 return FileResponse(file)
-            return FileResponse(STATIC_DIR / "index.html")
+            # SPA fallback – serve index.html with base path injected
+            return await serve_index()
 
     return app
 

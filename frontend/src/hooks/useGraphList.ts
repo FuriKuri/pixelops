@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useGraphStore } from '../store/graphStore'
 import type { GraphInfo } from '../types/api'
-
-const API_BASE = ''
+import { API_BASE } from '../config'
 
 export function useGraphList() {
   const setGraphs = useGraphStore((s) => s.setGraphs)
@@ -11,7 +10,7 @@ export function useGraphList() {
   useEffect(() => {
     let cancelled = false
     setIsLoading(true)
-    fetch(`${API_BASE}/api/graphs`)
+    fetch(`${API_BASE}/graphs`)
       .then((res) => res.json())
       .then((data: GraphInfo[]) => {
         if (!cancelled) {

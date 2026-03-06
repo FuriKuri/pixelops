@@ -2,8 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { useGraphStore } from '../store/graphStore'
 import type { NodeStartEvent, NodeProgressEvent, NodeEndEvent, InterruptEvent } from '../types/api'
-
-const API_BASE = ''
+import { API_BASE } from '../config'
 const MAX_BACKOFF = 30000
 
 export function useGraphStream(graphId: string | null) {
@@ -23,7 +22,7 @@ export function useGraphStream(graphId: string | null) {
       const ctrl = new AbortController()
       ctrlRef.current = ctrl
 
-      fetchEventSource(`${API_BASE}/api/graphs/${id}/run`, {
+      fetchEventSource(`${API_BASE}/graphs/${id}/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input }),

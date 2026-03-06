@@ -2,11 +2,10 @@ import { useState } from 'react'
 import { useGraphStore } from '../store/graphStore'
 import { useGraphList } from '../hooks/useGraphList'
 import type { GraphInfo, GraphStructure, CharacterState } from '../types/api'
-
-const API_BASE = ''
+import { API_BASE } from '../config'
 
 async function fetchStructure(graphId: string): Promise<GraphStructure> {
-  const res = await fetch(`${API_BASE}/api/graphs/${graphId}/structure`)
+  const res = await fetch(`${API_BASE}/graphs/${graphId}/structure`)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return res.json()
 }
