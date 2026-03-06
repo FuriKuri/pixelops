@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 
@@ -61,7 +62,11 @@ async def observe_graph(graph_id: str):
     async def event_generator():
         try:
             while True:
-                event = await queue.get()
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=30.0)
+                except asyncio.TimeoutError:
+                    yield {"event": "heartbeat", "data": "{}"}
+                    continue
                 if event is None:
                     yield {
                         "event": "done",

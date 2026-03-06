@@ -56,7 +56,7 @@ def create_app(base_path: str = "") -> FastAPI:
                 html = html.replace('href="/vite.svg"', f'href="{base_path}/vite.svg"')
             return HTMLResponse(html)
 
-        @app.get("/{path:path}")
+        @app.get("/{path:path}", response_model=None)
         async def spa_fallback(path: str) -> FileResponse | HTMLResponse:
             """Serve static files or fall back to index.html for SPA routing."""
             file = (STATIC_DIR / path).resolve()
