@@ -4,9 +4,9 @@ from collections import defaultdict, deque
 
 from pixelops._schemas import EdgeInfo, GraphInfo, LayoutData, NodeInfo, Position
 
-DESK_SPACING_X = 6
-DESK_SPACING_Y = 5
-MARGIN = 2
+NODE_SPACING_X = 8
+NODE_SPACING_Y = 8
+MARGIN = 3
 
 
 def generate_layout(graph: GraphInfo) -> LayoutData:
@@ -16,17 +16,26 @@ def generate_layout(graph: GraphInfo) -> LayoutData:
     layers = _topological_layers(graph.nodes, graph.edges)
 
     max_layer_width = max(len(layer) for layer in layers) if layers else 1
-    grid_width = MARGIN * 2 + max_layer_width * DESK_SPACING_X
-    grid_height = MARGIN * 2 + len(layers) * DESK_SPACING_Y
+    grid_width = MARGIN * 2 + max_layer_width * NODE_SPACING_X
+    grid_height = MARGIN * 2 + len(layers) * NODE_SPACING_Y
 
     node_positions: dict[str, Position] = {}
     for layer_idx, layer in enumerate(layers):
-        y = MARGIN + layer_idx * DESK_SPACING_Y
-        total_width = (len(layer) - 1) * DESK_SPACING_X
+        y = MARGIN + layer_idx * NODE_SPACING_Y
+        total_width = (len(layer) - 1) * NODE_SPACING_X
         start_x = MARGIN + (grid_width - 2 * MARGIN - total_width) // 2
+        # Stagger odd layers by half spacing
+        offset = NODE_SPACING_X // 2 if layer_idx % 2 == 1 else 0
         for node_idx, node_id in enumerate(layer):
-            x = start_x + node_idx * DESK_SPACING_X
+            x = start_x + node_idx * NODE_SPACING_X + offset
             node_positions[node_id] = Position(x=x, y=y)
+
+    # Recalculate grid size to fit all positions with margin
+    if node_positions:
+        max_x = max(p.x for p in node_positions.values())
+        max_y = max(p.y for p in node_positions.values())
+        grid_width = max(grid_width, max_x + MARGIN + 2)
+        grid_height = max(grid_height, max_y + MARGIN + 2)
 
     return LayoutData(width=grid_width, height=grid_height, node_positions=node_positions)
 

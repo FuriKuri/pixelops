@@ -1,10 +1,10 @@
-import type { LayoutData, Position } from '../types/api.ts'
+import type { LayoutData } from '../types/api.ts'
 import { TILE_SIZE } from './constants.ts'
 import type { Camera } from './Camera.ts'
 import { SpriteCache } from './sprites/SpriteCache.ts'
 import { getCachedTile } from './sprites/PlaceholderSprites.ts'
 
-export type TileType = 'floor' | 'wall' | 'desk' | 'empty'
+export type TileType = 'floor' | 'wall' | 'empty'
 
 export class TileMap {
   private tiles: TileType[][] = []
@@ -62,15 +62,6 @@ export class TileMap {
     for (let y = 0; y < this._height; y++) {
       this.tiles[y][0] = 'wall'
       this.tiles[y][this._width - 1] = 'wall'
-    }
-
-    // Place desks at node positions
-    for (const pos of Object.values(layout.node_positions) as Position[]) {
-      const dx = Math.floor(pos.x)
-      const dy = Math.floor(pos.y)
-      if (dx >= 0 && dx < this._width && dy >= 0 && dy < this._height) {
-        this.tiles[dy][dx] = 'desk'
-      }
     }
 
     this.spriteCache.clear()

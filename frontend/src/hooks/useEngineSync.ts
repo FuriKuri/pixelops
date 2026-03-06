@@ -77,7 +77,7 @@ export function useEngineSync(
           const walkableGrid = tileMap.getWalkableGrid()
           const dest = {
             x: Math.floor(storeChar.position.x),
-            y: Math.floor(storeChar.position.y) + 1,
+            y: Math.floor(storeChar.position.y),
           }
           const path = findPath(
             walkableGrid,

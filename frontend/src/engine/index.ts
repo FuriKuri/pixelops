@@ -39,3 +39,6 @@ export { EdgeEffect } from './EdgeEffect.ts'
 
 // Handoff Effects
 export { HandoffEffect } from './HandoffEffect.ts'
+
+// Graph Edge Renderer
+export { GraphEdgeRenderer } from './GraphEdgeRenderer.ts'

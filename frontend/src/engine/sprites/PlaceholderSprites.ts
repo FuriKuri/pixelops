@@ -15,7 +15,6 @@ const COLOR_NAMES = Object.keys(CHARACTER_COLORS)
 export const TILE_COLORS: Record<string, string> = {
   floor: '#8c8c8c',
   wall: '#4a4a4a',
-  desk: '#8b6914',
   empty: '#000000',
 }
 
@@ -48,12 +47,7 @@ export function drawPlaceholderTile(
   ctx.fillStyle = color
   ctx.fillRect(0, 0, TILE_SIZE, TILE_SIZE)
 
-  if (tileType === 'desk') {
-    // Desk detail - darker top edge
-    ctx.fillStyle = '#6b4f10'
-    ctx.fillRect(1, 1, 14, 2)
-    ctx.fillRect(2, 3, 12, 1)
-  } else if (tileType === 'wall') {
+  if (tileType === 'wall') {
     // Wall brick pattern
     ctx.fillStyle = '#3a3a3a'
     ctx.fillRect(0, 0, 16, 1)
