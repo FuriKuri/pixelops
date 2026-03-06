@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { useGraphStore } from '../store/graphStore'
 import { useGraphStream } from '../hooks/useGraphStream'
-import type { NodeStartEvent, NodeEndEvent } from '../types/api'
+import type { NodeStartEvent, NodeProgressEvent, NodeEndEvent } from '../types/api'
 
-const API_BASE = 'http://localhost:8000'
+const API_BASE = ''
 
 export function ControlPanel() {
   const selectedGraph = useGraphStore((s) => s.selectedGraph)
@@ -15,11 +15,19 @@ export function ControlPanel() {
   const setCharacterState = useGraphStore((s) => s.setCharacterState)
   const stopRun = useGraphStore((s) => s.stopRun)
   const reset = useGraphStore((s) => s.reset)
+  const appendNodeOutput = useGraphStore((s) => s.appendNodeOutput)
+  const clearNodeOutput = useGraphStore((s) => s.clearNodeOutput)
 
   const { isConnected, error, start, stop } = useGraphStream(selectedGraph?.id ?? null)
 
+  const [topicInput, setTopicInput] = useState('AI in Healthcare')
   const [hitlInput, setHitlInput] = useState('')
   const [hitlLoading, setHitlLoading] = useState(false)
+
+  const handleStart = () => {
+    const input = topicInput.trim() ? { topic: topicInput.trim() } : {}
+    start(input)
+  }
 
   const handleStop = () => {
     stop()
@@ -47,8 +55,14 @@ export function ControlPanel() {
           switch (msg.event) {
             case 'node_start': {
               const e = payload as NodeStartEvent
+              clearNodeOutput(e.node_id)
               setCharacterState(e.node_id, 'running')
               addNodeEvent({ node_id: e.node_id, status: 'running', timestamp: e.timestamp })
+              break
+            }
+            case 'node_progress': {
+              const e = payload as NodeProgressEvent
+              appendNodeOutput(e.node_id, e.data.token)
               break
             }
             case 'node_end': {
@@ -65,6 +79,10 @@ export function ControlPanel() {
             case 'interrupt': {
               setInterrupted(true)
               addNodeEvent({ node_id: '__interrupt__', status: 'pending', timestamp: payload.timestamp })
+              setHitlLoading(false)
+              break
+            }
+            case 'error': {
               setHitlLoading(false)
               break
             }
@@ -116,6 +134,20 @@ export function ControlPanel() {
 
   return (
     <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-2 md:py-3 flex flex-col gap-2 bg-white dark:bg-gray-900 transition-colors">
+      {!isRunning && !isConnected && selectedGraph && (
+        <div className="flex gap-2 items-center">
+          <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Topic:</label>
+          <input
+            type="text"
+            value={topicInput}
+            onChange={(e) => setTopicInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleStart()}
+            placeholder="Enter a topic..."
+            className="flex-1 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
+          />
+        </div>
+      )}
+
       <div className="flex items-center gap-2 md:gap-3">
         <span className={`text-xs md:text-sm font-medium ${statusColors[status] ?? 'text-gray-400'}`}>
           {status === 'connecting' ? (
@@ -127,7 +159,7 @@ export function ControlPanel() {
         {error && <span className="text-xs text-red-400 truncate max-w-xs">{error}</span>}
         <div className="flex gap-1.5 md:gap-2 ml-auto">
           <button
-            onClick={start}
+            onClick={handleStart}
             disabled={!selectedGraph || isConnected}
             className="px-2 md:px-3 py-1 text-xs md:text-sm bg-green-700 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed rounded text-white transition-colors"
           >

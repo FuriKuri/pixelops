@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useGraphStore } from '../store/graphStore'
 import type { GraphInfo } from '../types/api'
 
-const API_BASE = 'http://localhost:8000'
+const API_BASE = ''
 
 export function useGraphList() {
   const setGraphs = useGraphStore((s) => s.setGraphs)

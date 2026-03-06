@@ -3,7 +3,7 @@ import { useGraphStore } from '../store/graphStore'
 import { useGraphList } from '../hooks/useGraphList'
 import type { GraphInfo, GraphStructure, CharacterState } from '../types/api'
 
-const API_BASE = 'http://localhost:8000'
+const API_BASE = ''
 
 async function fetchStructure(graphId: string): Promise<GraphStructure> {
   const res = await fetch(`${API_BASE}/api/graphs/${graphId}/structure`)

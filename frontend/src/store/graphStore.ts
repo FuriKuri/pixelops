@@ -9,6 +9,7 @@ interface GraphState {
   nodeEvents: NodeEvent[]
   layout: LayoutData | null
   characters: Map<string, CharacterState>
+  nodeOutputs: Map<string, string>
   selectGraph: (graph: GraphInfo | null) => void
   setGraphs: (graphs: GraphInfo[]) => void
   startRun: () => void
@@ -19,6 +20,8 @@ interface GraphState {
   setCharacterState: (id: string, state: CharacterState['state']) => void
   setInterrupted: (interrupted: boolean) => void
   stopRun: () => void
+  appendNodeOutput: (nodeId: string, token: string) => void
+  clearNodeOutput: (nodeId: string) => void
 }
 
 export const useGraphStore = create<GraphState>((set) => ({
@@ -29,6 +32,7 @@ export const useGraphStore = create<GraphState>((set) => ({
   nodeEvents: [],
   layout: null,
   characters: new Map(),
+  nodeOutputs: new Map(),
   selectGraph: (graph) => set({ selectedGraph: graph }),
   setGraphs: (graphs) => set({ graphs }),
   startRun: () => set({ isRunning: true, isInterrupted: false, nodeEvents: [] }),
@@ -36,7 +40,19 @@ export const useGraphStore = create<GraphState>((set) => ({
   addNodeEvent: (event) =>
     set((state) => ({ nodeEvents: [...state.nodeEvents, event] })),
   reset: () =>
-    set({ isRunning: false, isInterrupted: false, nodeEvents: [], selectedGraph: null, layout: null, characters: new Map() }),
+    set({ isRunning: false, isInterrupted: false, nodeEvents: [], selectedGraph: null, layout: null, characters: new Map(), nodeOutputs: new Map() }),
+  appendNodeOutput: (nodeId, token) =>
+    set((state) => {
+      const next = new Map(state.nodeOutputs)
+      next.set(nodeId, (next.get(nodeId) ?? '') + token)
+      return { nodeOutputs: next }
+    }),
+  clearNodeOutput: (nodeId) =>
+    set((state) => {
+      const next = new Map(state.nodeOutputs)
+      next.delete(nodeId)
+      return { nodeOutputs: next }
+    }),
   setLayout: (layout) => set({ layout }),
   setInterrupted: (interrupted) => set({ isInterrupted: interrupted }),
   updateCharacter: (character) =>

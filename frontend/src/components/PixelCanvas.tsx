@@ -7,6 +7,7 @@ import { TileMap } from '../engine/TileMap'
 import { Character } from '../engine/Character'
 import { ParticleSystem } from '../engine/ParticleSystem'
 import { EdgeEffect } from '../engine/EdgeEffect'
+import { HandoffEffect } from '../engine/HandoffEffect'
 import { getCharacterColor } from '../engine/sprites/PlaceholderSprites'
 import { useEngineSync } from '../hooks/useEngineSync'
 
@@ -19,6 +20,7 @@ export function PixelCanvas() {
   const engineCharsRef = useRef<Map<string, Character>>(new Map())
   const particleSystemRef = useRef<ParticleSystem>(new ParticleSystem())
   const edgeEffectRef = useRef<EdgeEffect>(new EdgeEffect())
+  const handoffEffectRef = useRef<HandoffEffect>(new HandoffEffect())
 
   const layout = useGraphStore((s) => s.layout)
   const selectedGraph = useGraphStore((s) => s.selectedGraph)
@@ -33,6 +35,7 @@ export function PixelCanvas() {
     const tileMap = new TileMap()
     const particleSystem = particleSystemRef.current
     const edgeEffect = edgeEffectRef.current
+    const handoffEffect = handoffEffectRef.current
 
     rendererRef.current = renderer
     cameraRef.current = camera
@@ -48,11 +51,13 @@ export function PixelCanvas() {
       }
       particleSystem.update(dt)
       edgeEffect.update(dt)
+      handoffEffect.update(dt)
 
       // Render
       renderer.clear()
       tileMap.render(renderer.ctx, camera)
       edgeEffect.render(renderer.ctx, camera)
+      handoffEffect.render(renderer.ctx, camera)
       for (const char of engineCharsRef.current.values()) {
         char.render(renderer.ctx, camera)
       }
@@ -100,7 +105,7 @@ export function PixelCanvas() {
   }, [layout])
 
   // Sync SSE events -> engine character states
-  useEngineSync(engineCharsRef, tileMapRef, edgeEffectRef)
+  useEngineSync(engineCharsRef, tileMapRef, edgeEffectRef, handoffEffectRef)
 
   return (
     <div className="relative w-full h-full flex items-center justify-center">

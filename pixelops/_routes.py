@@ -1,25 +1,23 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
-from app.graph import registry
-from app.graph.executor import format_sse_events, resume_graph
-from app.graph.layout_generator import generate_layout
-from app.models.schemas import GraphInfo
+from pixelops._executor import format_sse_events, resume_graph
+from pixelops._layout import generate_layout
+from pixelops._registry import registry
+from pixelops._schemas import GraphInfo
 
 router = APIRouter(prefix="/api")
 
 
 class RunInput(BaseModel):
-    input: dict = {}
-    config: dict = {}
+    input: dict = Field(default_factory=dict)
 
 
 class HumanInput(BaseModel):
     input: str | dict
-    config: dict = {}
 
 
 @router.get("/graphs")
@@ -38,26 +36,22 @@ async def get_graph_structure(graph_id: str) -> dict:
 
 
 @router.post("/graphs/{graph_id}/run")
-async def run_graph(graph_id: str, body: RunInput, request: Request):
-    """Execute a graph and stream events via SSE."""
+async def run_graph(graph_id: str, body: RunInput):
     try:
         compiled = registry.get_compiled(graph_id)
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Graph '{graph_id}' not found")
-
     return EventSourceResponse(
-        format_sse_events(compiled, body.input, body.config),
+        format_sse_events(compiled, body.input),
     )
 
 
 @router.post("/graphs/{graph_id}/input")
-async def provide_input(graph_id: str, body: HumanInput, request: Request):
-    """Resume an interrupted graph with human input, streaming via SSE."""
+async def provide_input(graph_id: str, body: HumanInput):
     try:
         compiled = registry.get_compiled(graph_id)
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Graph '{graph_id}' not found")
-
     return EventSourceResponse(
-        resume_graph(compiled, body.input, body.config),
+        resume_graph(compiled, body.input),
     )

@@ -36,3 +36,6 @@ export { ParticleSystem, type Particle, type ParticlePreset } from './ParticleSy
 
 // Edge Effects
 export { EdgeEffect } from './EdgeEffect.ts'
+
+// Handoff Effects
+export { HandoffEffect } from './HandoffEffect.ts'

@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pixelops"
+version = "0.1.0"
+description = "Pixel Art visualization for LangGraph agents"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+keywords = ["langgraph", "visualization", "pixel-art", "ai-agents"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "langgraph>=0.3",
+    "pydantic>=2.0",
+    "sse-starlette>=2.0",
+]
+
+[project.optional-dependencies]
+anthropic = ["langchain-anthropic>=0.3"]
+openai = ["langchain-openai>=0.3"]
+
+[project.urls]
+Repository = "https://github.com/FuriKuri/pixelops"
+Issues = "https://github.com/FuriKuri/pixelops/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pixelops"]

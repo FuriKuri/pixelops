@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PixelOps</title>
+    <script>
+      // Apply saved theme before first render to avoid flash
+      try {
+        var theme = localStorage.getItem('pixelops-theme')
+        if (theme === 'light') {
+          document.documentElement.classList.remove('dark')
+        } else {
+          document.documentElement.classList.add('dark')
+        }
+      } catch (e) {}
+    </script>
+    <script type="module" crossorigin src="/assets/index-Dn1y2Ws9.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CrVpeish.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

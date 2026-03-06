@@ -8,13 +8,6 @@ import type { ParticleSystem } from './ParticleSystem.ts'
 
 export type CharacterState = 'idle' | 'walking' | 'working' | 'done' | 'error' | 'waiting'
 
-/** Smooth ease-in-out: accelerate at start, decelerate at end of path */
-function easeInOut(t: number): number {
-  if (t <= 0) return 0
-  if (t >= 1) return 1
-  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
-}
-
 export class Character {
   readonly id: string
   readonly name: string
@@ -150,14 +143,6 @@ export class Character {
     const linearStep = (CHARACTER_SPEED * deltaTime) / segDist
     this.segmentProgress = Math.min(1, this.segmentProgress + linearStep)
 
-    // Apply easing based on path position
-    const pathFraction = (this.pathIndex + this.segmentProgress) / Math.max(1, this.path.length)
-    const easeFactor = easeInOut(pathFraction)
-    // Blend: use easing at start/end of full path, linear in the middle
-    const speedMult = 0.5 + easeFactor * 0.5
-    // For segment interpolation, use the raw progress (easing affects overall speed feel)
-    void speedMult
-
     const easedT = this.segmentProgress
     this.position.x = this.segmentStart.x + segDx * easedT
     this.position.y = this.segmentStart.y + segDy * easedT
@@ -255,6 +240,20 @@ export class Character {
       dotSize,
       dotSize,
     )
+
+    // Name label below sprite
+    const nameFont = `bold ${Math.max(7, 6 * zoom)}px monospace`
+    ctx.font = nameFont
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+    const nameX = screen.x + (TILE_SIZE * zoom) / 2
+    const nameY = renderY + TILE_SIZE * zoom + 4 * zoom
+    ctx.strokeStyle = '#000000'
+    ctx.lineWidth = 2 * zoom * 0.3
+    ctx.strokeText(this.name, nameX, nameY)
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(this.name, nameX, nameY)
+    ctx.textAlign = 'left'
 
     // Waiting state: pulsing question bubble
     if (this.state === 'waiting' && this.speechBubble?.visible) {
